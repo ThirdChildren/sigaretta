@@ -17,10 +17,14 @@ import {
   type Room,
 } from "./game.js";
 
+const corsOrigin = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+  : "*";
+
 const app = express();
-app.use(cors());
+app.use(cors({ origin: corsOrigin }));
 const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: { origin: "*" } });
+const io = new Server(httpServer, { cors: { origin: corsOrigin } });
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
