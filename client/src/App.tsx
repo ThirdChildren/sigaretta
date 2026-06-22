@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { socket } from './socket'
+import { useEffect, useState, useSyncExternalStore } from 'react'
+import { socket, getCurrentPlayerId, subscribePlayerId } from './socket'
 import type { Ack, Prompt, RoomState, Story } from './types'
 import Home from './components/Home'
 import Lobby from './components/Lobby'
@@ -7,29 +7,26 @@ import PlayingView from './components/PlayingView'
 import RevealView from './components/RevealView'
 
 export default function App() {
-  const [myId, setMyId] = useState<string | null>(null)
+  const myId = useSyncExternalStore(subscribePlayerId, getCurrentPlayerId)
   const [room, setRoom] = useState<RoomState | null>(null)
   const [prompt, setPrompt] = useState<Prompt | null>(null)
-  const [stories, setStories] = useState<Story[] | null>(null)
+  const [story, setStory] = useState<Story | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    const onSession = ({ playerId }: { playerId: string }) => setMyId(playerId)
     const onUpdate = (state: RoomState) => {
       setRoom(state)
-      if (state.status !== 'reveal') setStories(null)
+      if (state.status !== 'reveal') setStory(null)
     }
     const onPrompt = (p: Prompt | null) => setPrompt(p)
-    const onReveal = (s: Story[]) => setStories(s)
+    const onReveal = (s: Story) => setStory(s)
 
-    socket.on('session', onSession)
     socket.on('room:update', onUpdate)
     socket.on('round:prompt', onPrompt)
     socket.on('room:reveal', onReveal)
 
     return () => {
-      socket.off('session', onSession)
       socket.off('room:update', onUpdate)
       socket.off('round:prompt', onPrompt)
       socket.off('room:reveal', onReveal)
@@ -74,7 +71,7 @@ export default function App() {
     if (room) socket.emit('room:leave', { code: room.code })
     setRoom(null)
     setPrompt(null)
-    setStories(null)
+    setStory(null)
     setError(null)
   }
 
@@ -91,8 +88,8 @@ export default function App() {
     return <PlayingView room={room} prompt={prompt} onSubmit={handleSubmit} error={error} />
   }
 
-  if (room.status === 'reveal' && stories) {
-    return <RevealView stories={stories} onExit={handleExit} />
+  if (room.status === 'reveal' && story) {
+    return <RevealView story={story} onExit={handleExit} />
   }
 
   return (

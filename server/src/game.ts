@@ -147,6 +147,17 @@ export function publicState(room: Room) {
 export function revealStories(room: Room) {
   return room.papers.map((paper) => ({
     id: paper.id,
-    lines: paper.answers.map((a, i) => ({ question: QUESTIONS[i], text: a.text, authorName: a.authorName })),
+    lines: paper.answers.map((a, i) => ({ question: QUESTIONS[i], text: a.text })),
   }))
+}
+
+export function assignStoriesToPlayers(room: Room): Map<string, number> {
+  const storyIds = room.papers.map((p) => p.id)
+  for (let i = storyIds.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[storyIds[i], storyIds[j]] = [storyIds[j], storyIds[i]]
+  }
+  const assignment = new Map<string, number>()
+  room.players.forEach((p, i) => assignment.set(p.id, storyIds[i % storyIds.length]))
+  return assignment
 }

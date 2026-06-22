@@ -25,7 +25,6 @@ export interface Prompt {
 export interface StoryLine {
   question: string
   text: string
-  authorName: string
 }
 
 export interface Story {
